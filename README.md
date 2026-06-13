@@ -2,12 +2,6 @@
 
 > "Describe a marketing goal. Let AI discover the audience, create the campaign, choose the channel, and launch it."
 
-## Elevator Pitch
-
-**XenoPilot AI** is an AI-native CRM for consumer brands that transforms a simple business goal into a complete marketing campaign. Marketers describe what they want to achieve in natural language, and the AI automatically identifies the target audience, creates segments, generates personalized messages, recommends the best communication channel, predicts campaign performance, and launches the campaign while tracking engagement through a simulated messaging infrastructure.
-
----
-
 ## The Problem
 
 Marketing teams today manually perform several steps:

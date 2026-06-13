@@ -151,9 +151,10 @@ router.post('/launch', async (req, res) => {
       setTimeout(async () => {
         // Dynamically import axios so we don't need it at the top level if not present
         const axios = require('axios');
+        const channelServiceUrl = process.env.CHANNEL_SERVICE_URL || 'http://localhost:5001/send';
         for (const comm of insertedComms) {
           try {
-            await axios.post('http://localhost:5001/send', {
+            await axios.post(channelServiceUrl, {
               communicationId: comm._id,
               campaignId: campaign._id,
               customerId: comm.customerId,

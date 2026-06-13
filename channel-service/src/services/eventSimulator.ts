@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const CRM_CALLBACK_URL = 'http://localhost:5000/api/callbacks/events';
+const CRM_CALLBACK_URL = process.env.CRM_CALLBACK_URL || 'http://localhost:5000/api/callbacks/events';
 
 async function emitEvent(campaignId: string, customerId: string, event: string, retryCount: number = 0, revenue?: number) {
   try {

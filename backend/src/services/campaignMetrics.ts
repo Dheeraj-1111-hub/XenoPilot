@@ -135,7 +135,10 @@ export async function getAnalyticsOverview() {
   let channelStatus = 'OFFLINE';
   try {
     const axios = require('axios');
-    const healthRes = await axios.get('http://localhost:5001/health', { timeout: 1000 });
+    const healthUrl = process.env.CHANNEL_SERVICE_URL 
+      ? process.env.CHANNEL_SERVICE_URL.replace('/send', '/health')
+      : 'http://localhost:5001/health';
+    const healthRes = await axios.get(healthUrl, { timeout: 1000 });
     if (healthRes.data?.status === 'ONLINE') channelStatus = 'ONLINE';
   } catch (e) {
     channelStatus = 'OFFLINE';

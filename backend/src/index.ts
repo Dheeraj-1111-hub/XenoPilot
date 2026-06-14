@@ -13,7 +13,7 @@ app.use(express.json());
 app.use('/api', routes);
 
 async function start() {
-  app.listen(Number(PORT), '0.0.0.0', () => {
+  app.listen(PORT, () => {
     console.log(`🚀 Server listening on port ${PORT}`);
   });
 

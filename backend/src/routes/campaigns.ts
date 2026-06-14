@@ -162,7 +162,10 @@ router.post('/launch', async (req, res) => {
               message: generatedMessage
             });
           } catch (e: any) {
-            console.error(`[CRM] Failed to dispatch to Channel Service for communication ${comm._id}:`, e.message);
+            const errorMsg = e.code === 'ECONNREFUSED' 
+              ? 'Connection Refused (Is the Channel Service running on port 5001?)' 
+              : (e.message || e.toString());
+            console.error(`[CRM] Failed to dispatch to Channel Service for communication ${comm._id}: ${errorMsg}`);
           }
         }
       }, 0);

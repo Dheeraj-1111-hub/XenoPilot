@@ -1,6 +1,6 @@
-import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const MongooseSchemaContext = `
 Customer = {
@@ -45,12 +45,12 @@ Return ONLY a valid JSON object matching this schema. NO markdown, NO text.
 `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-flash-lite-latest',
-      contents: prompt,
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }]
     });
     
-    let text = response.text || '';
+    let text = response.choices[0]?.message?.content || '';
     
     // Robustly extract JSON object using regex
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -61,8 +61,9 @@ Return ONLY a valid JSON object matching this schema. NO markdown, NO text.
     const parsed = JSON.parse(jsonMatch[0]);
     return parsed;
   } catch (err: any) {
-    console.error('Gemini error:', err);
-    throw new Error('Failed to generate plan from Gemini. Details: ' + err.message);
+    if (err?.status === 429) console.warn('⚠️ [AI] Quota Exceeded (429).');
+    else console.error('Groq error:', err.message || 'Unknown error');
+    throw new Error('Failed to generate plan from AI. Details: ' + err.message);
   }
 }
 
@@ -80,13 +81,14 @@ Return ONLY the insight text, without any quotes or markdown.
 `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-flash-lite-latest',
-      contents: prompt,
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }]
     });
-    return response.text?.trim() || "No insight available.";
-  } catch (err) {
-    console.error('Gemini error:', err);
+    return response.choices[0]?.message?.content?.trim() || "No insight available.";
+  } catch (err: any) {
+    if (err?.status === 429) console.warn('⚠️ [AI] Quota Exceeded (429).');
+    else console.error('Groq error:', err.message || 'Unknown error');
     return "Intelligence engine unavailable.";
   }
 }
@@ -112,17 +114,18 @@ Customer = {
 Rules:
 1. Return ONLY a valid JSON object. No markdown, no quotes outside the JSON.
 2. Use valid MongoDB operators ($gt, $lt, $gte, $lte, $in).
-3. If the query implies date math (e.g., "inactive 45 days"), calculate the exact ISO string threshold based on the Current Date Context provided above and use it in the query (e.g., { "lastOrderDate": { "$lt": "2024-..." } }).
+3. If the query implies date math (e.g., "inactive 45 days" or "haven't ordered recently"), calculate the exact ISO string threshold based on the Current Date Context provided above and use it in the query (e.g., { "lastOrderDate": { "$lt": "2024-..." } }).
+4. DO NOT add 'totalOrders: 0' unless the user explicitly asks for customers with ZERO lifetime orders.
 
 Return ONLY the JSON.
 `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-flash-lite-latest',
-      contents: prompt,
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }]
     });
-    let text = response.text || '';
+    let text = response.choices[0]?.message?.content || '';
     
     // Robustly extract JSON object using regex
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -132,7 +135,8 @@ Return ONLY the JSON.
     
     return JSON.parse(jsonMatch[0]);
   } catch (err: any) {
-    console.error('Gemini query error:', err.message);
+    if (err?.status === 429) console.warn('⚠️ [AI] Quota Exceeded (429).');
+    else console.error('Groq query error:', err.message || 'Unknown error');
     throw new Error('Failed to generate query from AI: ' + err.message);
   }
 }

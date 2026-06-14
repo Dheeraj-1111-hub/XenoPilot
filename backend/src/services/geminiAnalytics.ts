@@ -1,6 +1,6 @@
-import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function generateInsight(funnel: any, prediction: any) {
   const prompt = `
@@ -20,16 +20,20 @@ Predicted Performance:
 `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }]
     });
     
-    return response.text?.trim() || "Campaign performed as expected. Consider scaling audience.";
+    return response.choices[0]?.message?.content?.trim() || "Campaign performed as expected. Consider scaling audience.";
   } catch (err: any) {
-    console.error('Gemini Analytics error:', err);
+    if (err.status === 429) {
+      console.warn('⚠️ [Analytics] Groq API Quota Exceeded (429). Falling back to deterministic insights.');
+    } else {
+      console.error('Groq Analytics error:', err.message || 'Unknown error');
+    }
     
-    // Dynamic fallback if Gemini is rate limited
+    // Dynamic fallback if Groq is rate limited
     const actualOpen = funnel.openRate || 0;
     const predictedOpen = prediction.predictedOpenRate || 0;
     

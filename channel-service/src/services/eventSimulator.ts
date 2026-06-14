@@ -1,6 +1,8 @@
 import axios from 'axios';
+import http from 'http';
 
-const CRM_CALLBACK_URL = process.env.CRM_CALLBACK_URL || 'http://localhost:5000/api/callbacks/events';
+const CRM_CALLBACK_URL = process.env.CRM_CALLBACK_URL || 'http://127.0.0.1:5000/api/callbacks/events';
+const httpAgent = new http.Agent({ keepAlive: true, maxSockets: 50 });
 
 async function emitEvent(campaignId: string, customerId: string, event: string, retryCount: number = 0, revenue?: number) {
   try {
@@ -11,7 +13,7 @@ async function emitEvent(campaignId: string, customerId: string, event: string, 
       timestamp: new Date().toISOString(),
       retryCount,
       revenue
-    });
+    }, { httpAgent });
   } catch (err: any) {
     console.error(`[Channel Service] Callback Failed for ${event}:`, err.message);
   }

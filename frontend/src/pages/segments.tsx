@@ -3,6 +3,7 @@ import { Sparkles, Users, Search, Loader2, Database, DatabaseZap, Save, Code } f
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import api from '../services/api';
+import { InfoTooltip } from '../components/ui/info-tooltip';
 
 
 const staggerContainer = {
@@ -79,8 +80,8 @@ export default function Segments() {
            <div className="flex items-center gap-2 text-white/50 text-base font-medium mb-1">
              <Database className="w-4 h-4" /> Data Lake
            </div>
-           <h1 className="text-3xl font-semibold text-white tracking-tight">
-             Audience Topology
+           <h1 className="text-3xl font-semibold text-white tracking-tight flex items-center">
+             Audience Topology <InfoTooltip content="Dynamic consumer segments computed via deterministic queries." />
            </h1>
            <p className="text-base text-white/50 mt-2">
              Dynamic consumer segments computed via deterministic queries.
@@ -94,7 +95,7 @@ export default function Segments() {
         <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
           <div className="flex items-center gap-2">
             <DatabaseZap className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm font-semibold text-white tracking-widest uppercase">Intelligence Query Terminal</span>
+            <span className="text-sm font-semibold text-white tracking-widest uppercase flex items-center">Intelligence Query Terminal <InfoTooltip content="Enter a natural language request to instantly query the database." /></span>
           </div>
           <span className="text-xs font-mono text-white/30 uppercase tracking-wider">Natural Language to SQL</span>
         </div>
@@ -147,7 +148,7 @@ export default function Segments() {
               <div className="flex flex-col justify-between">
                 <div>
                   <h4 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <Users className="h-4 w-4 text-emerald-400" /> Target Audience Discovered
+                    <Users className="h-4 w-4 text-emerald-400" /> Target Audience Discovered <InfoTooltip content="The number of real customers that match the generated MongoDB query." />
                   </h4>
                   <div className="text-4xl font-mono text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400 font-bold mb-1 tracking-tight">
                     {queryResult.count.toLocaleString('en-IN')} <span className="text-lg text-white/40 font-semibold uppercase tracking-wider ml-1">Nodes Matched</span>
@@ -181,7 +182,7 @@ export default function Segments() {
         <div className="flex items-center justify-between mb-4">
            <h3 className="text-base font-semibold text-white/80 flex items-center gap-2">
               <Users className="w-4 h-4 text-white/40" />
-              Active Audience Matrix
+              Active Audience Matrix <InfoTooltip content="Saved dynamic segments available for campaign targeting." />
            </h3>
         </div>
         

@@ -1,8 +1,8 @@
-import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
 import { generateMongoQueryFromNL } from '../ai/gemini';
 import { Customer } from '../models/Customer';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function generateStrategy(directive: string) {
   const prompt = `
@@ -28,12 +28,13 @@ Return ONLY a valid JSON object matching this exact schema. NO markdown, NO text
 `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: "json_object" }
     });
     
-    let text = response.text || '';
+    let text = response.choices[0]?.message?.content || '';
     
     // Robustly extract JSON object using regex
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -55,11 +56,20 @@ Return ONLY a valid JSON object matching this exact schema. NO markdown, NO text
     }
 
     // Scale conversions based on actual audience size rather than the raw Gemini prediction
-    // If Gemini predicted 10 conversions for an unknown audience, let's scale it based on CTR and a realistic conversion rate
+    // If Groq predicted 10 conversions for an unknown audience, let's scale it based on CTR and a realistic conversion rate
     const predictedConversions = Math.round(count * (strategy.forecast.openRate / 100) * (strategy.forecast.ctr / 100) * 0.15);
 
+    // Mongoose does not automatically cast strings to Dates inside .aggregate() pipelines!
+    // We must convert the AI's generated ISO strings into native Javascript Date objects.
+    const dateReviver = (key: string, value: any) => {
+      const isIsoDate = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d*)?(?:[-+]\d{2}:?\d{2}|Z)$/.test(value);
+      if (typeof value === 'string' && isIsoDate) return new Date(value);
+      return value;
+    };
+    const aggCriteriaJson = JSON.parse(JSON.stringify(criteriaJson), dateReviver);
+
     const agg = await Customer.aggregate([
-      { $match: criteriaJson },
+      { $match: aggCriteriaJson },
       { $group: { _id: null, avgSpend: { $avg: "$totalSpent" } } }
     ]);
     const audienceAvgSpend = agg.length > 0 ? Math.round(agg[0].avgSpend) : 0;
@@ -75,9 +85,13 @@ Return ONLY a valid JSON object matching this exact schema. NO markdown, NO text
     };
 
   } catch (err: any) {
-    console.error('Gemini Strategy error:', err);
+    if (err.status === 429) {
+      console.warn('⚠️ [Strategy] Groq API Quota Exceeded (429). Falling back to deterministic strategy.');
+    } else {
+      console.error('Groq Strategy error:', err.message || 'Unknown error');
+    }
     
-    // Provide a resilient fallback if Gemini quota is exhausted
+    // Provide a resilient fallback if Groq quota is exhausted
     const fallbackCount = await Customer.countDocuments({ status: 'Inactive' });
     return {
       goal: "Reactivate dormant customers",

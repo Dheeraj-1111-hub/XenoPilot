@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { X, Target, Send, Users, Activity, BarChart3, Clock, Rocket, Sparkles, Code } from 'lucide-react';
+import { X, Target, Send, Users, Activity, BarChart3, Clock, Rocket, Sparkles, Code, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
+import { InfoTooltip } from '../components/ui/info-tooltip';
+import { AnimatedNumber } from '../components/ui/animated-number';
 
 
 const staggerContainer = {
@@ -95,12 +97,12 @@ export default function Campaigns() {
                 <table className="w-full text-base text-left border-collapse">
                   <thead className="bg-[#050505]/50 backdrop-blur-md text-white/40 border-b border-white/5 sticky top-0 z-10 text-[10px] uppercase tracking-widest font-bold">
                     <tr>
-                      <th className="px-6 py-4">Directive</th>
-                      <th className="px-6 py-4">Segment</th>
-                      <th className="px-6 py-4">Channel</th>
-                      <th className="px-6 py-4 text-right">Open Rate</th>
-                      <th className="px-6 py-4 text-right">CTR</th>
-                      <th className="px-6 py-4 text-right">Status</th>
+                      <th className="px-6 py-4 flex items-center">Directive <InfoTooltip content="The natural language objective or goal that generated this campaign." /></th>
+                      <th className="px-6 py-4">Segment <InfoTooltip content="The target audience for this campaign." /></th>
+                      <th className="px-6 py-4">Channel <InfoTooltip content="The medium used to deliver the payload (e.g. WhatsApp, SMS)." /></th>
+                      <th className="px-6 py-4 text-right">Open Rate <InfoTooltip content="Percentage of recipients who opened the message." /></th>
+                      <th className="px-6 py-4 text-right">CTR <InfoTooltip content="Click-Through Rate: Percentage of recipients who clicked a link." /></th>
+                      <th className="px-6 py-4 text-right">Status <InfoTooltip content="Current state of the orchestration pipeline." /></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 bg-transparent">
@@ -121,8 +123,12 @@ export default function Campaigns() {
                             <Send className="h-3.5 w-3.5 text-white/30 group-hover:text-emerald-400 transition-colors" /> {c.channel}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-right font-mono font-bold text-white/90">{c.openRate}%</td>
-                        <td className="px-6 py-4 text-right font-mono font-bold text-white/90">{c.ctr}%</td>
+                        <td className="px-6 py-4 text-right font-mono font-bold text-white/90">
+                          {c.status === 'Pending' || c.stats?.delivered === 0 ? <Loader2 className="w-3.5 h-3.5 animate-spin inline-block text-white/30" /> : <AnimatedNumber value={c.openRate} suffix="%" />}
+                        </td>
+                        <td className="px-6 py-4 text-right font-mono font-bold text-white/90">
+                          {c.status === 'Pending' || c.stats?.delivered === 0 ? <Loader2 className="w-3.5 h-3.5 animate-spin inline-block text-white/30" /> : <AnimatedNumber value={c.ctr} suffix="%" />}
+                        </td>
                         <td className="px-6 py-4 text-right">
                           <span className={`inline-flex items-center justify-center text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded shadow-sm ${c.status === 'Running' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : c.status === 'Pending' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-white/5 text-white/40 border border-white/10'}`}>
                             {c.status}
@@ -184,14 +190,20 @@ export default function Campaigns() {
                     {/* Prediction vs Actual */}
                     <div>
                       <h4 className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3 flex items-center gap-2">
-                        <BarChart3 className="h-4 w-4" /> Intelligence Deviation
+                        <BarChart3 className="h-4 w-4" /> Intelligence Deviation <InfoTooltip content="Compares the AI's predictive baseline against real-time actual performance." />
                       </h4>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="p-4 rounded-xl border border-white/5 bg-white/[0.02] backdrop-blur-md relative overflow-hidden group hover:border-white/10 transition-colors shadow-lg">
                           <div className={`absolute top-0 right-0 w-20 h-20 rounded-full blur-xl pointer-events-none transition-colors ${campaignDetails.funnel.openRate >= (selectedCampaign.predictedOpenRate || 0) ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20' : 'bg-rose-500/10 group-hover:bg-rose-500/20'}`} />
                           <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2 relative z-10">Open Rate</p>
                           <div className="flex items-end justify-between relative z-10">
-                            <div className="text-[28px] font-mono font-bold tracking-tight text-white/90">{campaignDetails.funnel.openRate}%</div>
+                            {campaignDetails.funnel.delivered === 0 ? (
+                              <div className="flex items-center gap-2 text-sm text-white/40"><Loader2 className="w-4 h-4 animate-spin" /> Syncing</div>
+                            ) : (
+                              <div className="text-[28px] font-mono font-bold tracking-tight text-white/90 flex items-center gap-2">
+                                <AnimatedNumber value={campaignDetails.funnel.openRate} suffix="%" />
+                              </div>
+                            )}
                             <div className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded shadow-sm mb-1 border ${campaignDetails.funnel.openRate >= (selectedCampaign.predictedOpenRate || 0) ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-rose-400 bg-rose-500/10 border-rose-500/20'}`}>
                               vs {selectedCampaign.predictedOpenRate || 0}%
                             </div>
@@ -201,7 +213,13 @@ export default function Campaigns() {
                           <div className={`absolute top-0 right-0 w-20 h-20 rounded-full blur-xl pointer-events-none transition-colors ${campaignDetails.funnel.ctr >= (selectedCampaign.predictedCTR || 0) ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20' : 'bg-rose-500/10 group-hover:bg-rose-500/20'}`} />
                           <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2 relative z-10">CTR</p>
                           <div className="flex items-end justify-between relative z-10">
-                            <div className="text-[28px] font-mono font-bold tracking-tight text-white/90">{campaignDetails.funnel.ctr}%</div>
+                            {campaignDetails.funnel.delivered === 0 ? (
+                              <div className="flex items-center gap-2 text-sm text-white/40"><Loader2 className="w-4 h-4 animate-spin" /> Syncing</div>
+                            ) : (
+                              <div className="text-[28px] font-mono font-bold tracking-tight text-white/90 flex items-center gap-2">
+                                <AnimatedNumber value={campaignDetails.funnel.ctr} suffix="%" />
+                              </div>
+                            )}
                             <div className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded shadow-sm mb-1 border ${campaignDetails.funnel.ctr >= (selectedCampaign.predictedCTR || 0) ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-rose-400 bg-rose-500/10 border-rose-500/20'}`}>
                               vs {selectedCampaign.predictedCTR || 0}%
                             </div>
@@ -216,7 +234,7 @@ export default function Campaigns() {
                         <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none group-hover/insight:bg-indigo-500/20 transition-colors" />
                         <div className="flex items-center gap-2 mb-3 text-indigo-400 relative z-10">
                           <Sparkles className="h-4 w-4" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">Cognitive Insight</span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Cognitive Insight <InfoTooltip content="Real-time analysis generated by the AI engine based on current telemetry." /></span>
                         </div>
                         <div className="text-sm text-indigo-100/80 leading-relaxed relative z-10">
                           {campaignDetails.insight}
@@ -237,22 +255,22 @@ export default function Campaigns() {
                     {/* Webhook Timeline Funnel */}
                     <div>
                       <h4 className="text-base font-semibold text-white/80 mb-4 flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-white/40" /> Execution Funnel
+                        <Clock className="h-4 w-4 text-white/40" /> Execution Funnel <InfoTooltip content="The step-by-step conversion pipeline of the current campaign." />
                       </h4>
-                      <div className="border-l border-white/10 ml-2 pl-6 space-y-6 relative py-2">
-                        <TimelineStep label="Target Audience" value={campaignDetails.funnel.audience} isFirst />
-                        <TimelineStep label="Transmission Sent" value={campaignDetails.funnel.sent} />
-                        <TimelineStep label="Nodes Reached" value={campaignDetails.funnel.delivered} />
-                        <TimelineStep label="Payloads Opened" value={campaignDetails.funnel.opened} />
-                        <TimelineStep label="Links Activated" value={campaignDetails.funnel.clicked} />
-                        <TimelineStep label="Revenue Converted" value={campaignDetails.funnel.converted} />
+                      <div className="border-l border-white/10 ml-2 pl-6 space-y-4 relative py-2">
+                        <TimelineStep label="Target Audience" value={campaignDetails.funnel.audience} max={campaignDetails.funnel.audience} colorClass="bg-white/20" isFirst />
+                        <TimelineStep label="Transmission Sent" value={campaignDetails.funnel.sent} max={campaignDetails.funnel.audience} colorClass="bg-blue-400" />
+                        <TimelineStep label="Nodes Reached" value={campaignDetails.funnel.delivered} max={campaignDetails.funnel.sent} colorClass="bg-indigo-400" />
+                        <TimelineStep label="Payloads Opened" value={campaignDetails.funnel.opened} max={campaignDetails.funnel.delivered} colorClass="bg-purple-400" />
+                        <TimelineStep label="Links Activated" value={campaignDetails.funnel.clicked} max={campaignDetails.funnel.opened} colorClass="bg-emerald-400" />
+                        <TimelineStep label="Revenue Converted" value={campaignDetails.funnel.converted} max={campaignDetails.funnel.clicked} colorClass="bg-yellow-400" />
                       </div>
                     </div>
 
                     {/* Live Event Stream */}
                     <div>
                       <h4 className="text-base font-semibold text-white/80 mb-4 flex items-center gap-2">
-                        <Activity className="h-4 w-4 text-emerald-400 animate-pulse" /> Live Event Stream
+                        <Activity className="h-4 w-4 text-emerald-400 animate-pulse" /> Live Event Stream <InfoTooltip content="Asynchronous webhooks received from the Channel Service." />
                       </h4>
                       <div className="space-y-2">
                         {campaignDetails.eventStream?.map((event: any, i: number) => (
@@ -287,14 +305,29 @@ export default function Campaigns() {
   );
 }
 
-function TimelineStep({ label, value, isFirst = false }: { label: string, value: number, isFirst?: boolean }) {
+function TimelineStep({ label, value, max, colorClass, isFirst = false }: { label: string, value: number, max: number, colorClass: string, isFirst?: boolean }) {
+  const percentage = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
+  
   return (
-    <div className="relative group">
-      <div className={`absolute -left-[29px] top-1.5 w-2 h-2 rounded-full ${isFirst ? 'bg-white' : 'bg-white/20'} ring-4 ring-[#050505] transition-transform group-hover:scale-125`}></div>
-      <div className="flex items-center justify-between">
-        <span className="text-base font-medium text-white/90">{label}</span>
-        <span className="text-base font-mono text-white/70">{value.toLocaleString('en-IN')}</span>
+    <div className="relative group mb-2">
+      <div className={`absolute -left-[29px] top-1 w-2 h-2 rounded-full ${isFirst ? 'bg-white' : colorClass} ring-4 ring-[#050505] transition-transform group-hover:scale-125 z-10`}></div>
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-sm font-medium text-white/90">{label}</span>
+        <div className="flex items-center gap-3">
+          {!isFirst && value > 0 && <span className="text-[10px] font-bold text-white/40">{percentage}%</span>}
+          <span className="text-base font-mono text-white/90">{value.toLocaleString('en-IN')}</span>
+        </div>
       </div>
+      {!isFirst && (
+        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: `${percentage}%` }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className={`h-full ${colorClass.replace('bg-', 'bg-')}`} 
+          />
+        </div>
+      )}
     </div>
   );
 }

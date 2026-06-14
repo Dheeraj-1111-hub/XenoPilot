@@ -1,6 +1,6 @@
-import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function generateCopy(strategy: any) {
   const prompt = `
@@ -21,19 +21,23 @@ ${strategy.offer}
 Channel:
 ${strategy.channel}
 
-Keep under 150 characters.
+Write a compelling, highly-personalized multi-line marketing message (around 300-400 characters). Feel free to use emojis if appropriate for the channel.
 Return ONLY the raw message text. Do not include quotes, markdown, or JSON.
 `;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }]
     });
     
-    return response.text?.trim() || "Exclusive offer inside!";
+    return response.choices[0]?.message?.content?.trim() || "Exclusive offer inside!";
   } catch (err: any) {
-    console.error('Gemini Copy error:', err);
+    if (err.status === 429) {
+      console.warn('⚠️ [Copy] Groq API Quota Exceeded (429). Falling back to deterministic copy.');
+    } else {
+      console.error('Groq Copy error:', err.message || 'Unknown error');
+    }
     return "Hi there! We miss you. Click here for an exclusive VIP discount to reactivate your account today!";
   }
 }

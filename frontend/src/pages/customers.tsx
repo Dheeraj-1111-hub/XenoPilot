@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Search, X, Sparkles, Receipt, Megaphone, Clock, Target, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
+import { InfoTooltip } from '../components/ui/info-tooltip';
 
 
 const staggerContainer = {
@@ -61,8 +62,8 @@ export default function Customers() {
             <div className="flex items-center gap-2 text-white/50 text-base font-medium mb-1">
               <Users className="w-4 h-4" /> CRM Database
             </div>
-            <h1 className="text-3xl font-semibold text-white tracking-tight">
-              Customer Telemetry
+            <h1 className="text-3xl font-semibold text-white tracking-tight flex items-center">
+              Customer Telemetry <InfoTooltip content="High-resolution records of individual consumer LTV and behavioral patterns." />
             </h1>
             <p className="text-base text-white/50 mt-2">
               High-resolution records of individual consumer LTV and behavioral patterns.
@@ -90,11 +91,11 @@ export default function Customers() {
               <table className="w-full text-base text-left border-collapse">
                 <thead className="bg-[#050505]/50 backdrop-blur-md text-white/40 border-b border-white/5 sticky top-0 z-10 text-[10px] uppercase tracking-widest font-bold">
                   <tr>
-                    <th className="px-6 py-4">Identity</th>
-                    <th className="px-6 py-4">Protocol Address</th>
-                    <th className="px-6 py-4 text-right">Transactions</th>
-                    <th className="px-6 py-4 text-right">Lifetime Value</th>
-                    <th className="px-6 py-4 text-right">Status</th>
+                    <th className="px-6 py-4 flex items-center">Identity <InfoTooltip content="The customer's full name." /></th>
+                    <th className="px-6 py-4">Protocol Address <InfoTooltip content="The primary communication email address." /></th>
+                    <th className="px-6 py-4 text-right flex items-center justify-end">Transactions <InfoTooltip content="Total number of successful orders." /></th>
+                    <th className="px-6 py-4 text-right">Lifetime Value <InfoTooltip content="Cumulative monetary value of all orders." /></th>
+                    <th className="px-6 py-4 text-right">Status <InfoTooltip content="Current activity status based on recent purchase behavior." /></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5 bg-transparent">
@@ -169,28 +170,28 @@ export default function Customers() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 border border-white/5 bg-white/[0.02] backdrop-blur-md rounded-xl shadow-lg relative overflow-hidden group/risk">
                       <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500/10 rounded-full blur-xl pointer-events-none group-hover/risk:bg-rose-500/20 transition-colors" />
-                      <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 relative z-10">Risk Level</div>
+                      <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 relative z-10 flex items-center">Risk Level <InfoTooltip content="AI assessment of the customer's likelihood to churn." /></div>
                       <div className={`text-xl tracking-tight font-semibold relative z-10 ${detailedCustomer.intelligence.riskLevel === 'HIGH' ? 'text-rose-400' : detailedCustomer.intelligence.riskLevel === 'MEDIUM' ? 'text-amber-400' : 'text-emerald-400'}`}>
                         {detailedCustomer.intelligence.riskLevel}
                       </div>
                     </div>
                     <div className="p-4 border border-white/5 bg-white/[0.02] backdrop-blur-md rounded-xl shadow-lg relative overflow-hidden group/seg">
                       <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl pointer-events-none group-hover/seg:bg-emerald-500/20 transition-colors" />
-                      <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 relative z-10">Segment</div>
+                      <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 relative z-10 flex items-center">Segment <InfoTooltip content="The primary behavioral cohort this customer belongs to." /></div>
                       <div className="text-lg tracking-tight font-semibold text-white/90 relative z-10 line-clamp-1">
                         {detailedCustomer.intelligence.segment}
                       </div>
                     </div>
                     <div className="p-4 border border-white/5 bg-white/[0.02] backdrop-blur-md rounded-xl shadow-lg relative overflow-hidden group/chan">
                       <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full blur-xl pointer-events-none group-hover/chan:bg-blue-500/20 transition-colors" />
-                      <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 relative z-10">Optimal Channel</div>
+                      <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 relative z-10 flex items-center">Optimal Channel <InfoTooltip content="The communication channel with the highest historical engagement for this user." /></div>
                       <div className="text-lg tracking-tight font-semibold text-white/90 relative z-10">
                         {detailedCustomer.intelligence.recommendedChannel}
                       </div>
                     </div>
                     <div className="p-4 border border-white/5 bg-white/[0.02] backdrop-blur-md rounded-xl shadow-lg relative overflow-hidden group/act">
                       <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-full blur-xl pointer-events-none group-hover/act:bg-purple-500/20 transition-colors" />
-                      <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 relative z-10">Suggested Action</div>
+                      <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 relative z-10 flex items-center">Suggested Action <InfoTooltip content="AI-recommended marketing action to maximize lifetime value." /></div>
                       <div className="text-lg tracking-tight font-semibold text-white/90 truncate relative z-10" title={detailedCustomer.intelligence.recommendedAction}>
                         {detailedCustomer.intelligence.recommendedAction}
                       </div>
@@ -203,7 +204,7 @@ export default function Customers() {
                   <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none group-hover/insight:bg-indigo-500/20 transition-colors" />
                   <div className="flex items-center gap-2 mb-3 text-indigo-400 relative z-10">
                     <Sparkles className="h-4 w-4" />
-                    <span className="text-xs font-bold uppercase tracking-widest">Cognitive Insight</span>
+                    <span className="text-xs font-bold uppercase tracking-widest flex items-center">Cognitive Insight <InfoTooltip content="Contextual behavioral analysis generated by the AI engine." /></span>
                   </div>
                   {detailedCustomer?.intelligence ? (
                     <p className="text-sm text-white/80 leading-relaxed relative z-10">

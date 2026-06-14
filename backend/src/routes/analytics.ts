@@ -6,6 +6,9 @@ import { generateInsight } from '../services/geminiAnalytics';
 
 const router = Router();
 
+// In-memory cache for insights
+const insightCache = new Map<string, { insight: string, timestamp: number }>();
+
 router.get('/dashboard', async (req, res) => {
   try {
     const customerCount = await Customer.countDocuments();
@@ -34,8 +37,18 @@ router.get('/campaign/:id', async (req, res) => {
     const funnel = await getCampaignFunnel(campaignId);
     const eventStream = await getEventStream(campaignId);
     
-    // Generate AI Insight
-    const insight = await generateInsight(funnel, campaign);
+    // Generate AI Insight with caching to prevent 429 Quota Exceeded
+    let insight = "Analyzing telemetry...";
+    const now = Date.now();
+    const cached = insightCache.get(campaignId);
+    
+    // Cache for 60 seconds (60000 ms)
+    if (cached && now - cached.timestamp < 60000) {
+      insight = cached.insight;
+    } else {
+      insight = await generateInsight(funnel, campaign);
+      insightCache.set(campaignId, { insight, timestamp: now });
+    }
 
     res.json({
       campaign,

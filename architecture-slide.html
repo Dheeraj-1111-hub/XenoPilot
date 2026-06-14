@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XenoPilot Architecture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            background-color: #050505; 
+            color: #ffffff; 
+            font-family: 'Outfit', sans-serif; 
+            margin: 0; 
+            overflow: hidden; 
+        }
+        /* Beautiful dark grid background */
+        .grid-bg {
+            position: absolute; inset: 0;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+            -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+            z-index: 0;
+        }
+        .glass-card {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: absolute;
+            z-index: 10;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        .glass-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .core-card {
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            background: linear-gradient(180deg, rgba(30, 27, 75, 0.4) 0%, rgba(0, 0, 0, 0.8) 100%);
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        
+        .badge {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            color: rgba(255, 255, 255, 0.6);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .label-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            fill: rgba(255, 255, 255, 0.4);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        /* SVG Paths */
+        .path-line {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+        
+        .path-glow {
+            fill: none;
+            stroke-width: 3;
+            stroke-dasharray: 10 20;
+            animation: flow 20s linear infinite;
+        }
+        .path-glow.reverse {
+            animation: flow-reverse 20s linear infinite;
+        }
+        
+        @keyframes flow { to { stroke-dashoffset: -1000; } }
+        @keyframes flow-reverse { to { stroke-dashoffset: 1000; } }
+        
+        /* Gradient Text */
+        .text-gradient {
+            background: linear-gradient(135deg, #ffffff 0%, #71717a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    
+    <!-- Header -->
+    <div class="absolute top-12 left-0 right-0 flex flex-col items-center z-20 pointer-events-none">
+        <h1 class="text-4xl font-bold tracking-tight text-gradient mb-4">XenoPilot Architecture</h1>
+        <div class="badge">Event-Driven AI Intelligence Pipeline</div>
+    </div>
+
+    <!-- Container -->
+    <div class="absolute inset-0 flex items-center justify-center pt-16">
+        <div class="relative w-[1100px] h-[600px]">
+            
+            <!-- SVG Paths connecting nodes -->
+            <svg class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: 5;">
+                <defs>
+                    <linearGradient id="grad-blue" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#38bdf8" stop-opacity="0" />
+                        <stop offset="50%" stop-color="#38bdf8" stop-opacity="1" />
+                        <stop offset="100%" stop-color="#38bdf8" stop-opacity="0" />
+                    </linearGradient>
+                    <linearGradient id="grad-indigo" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#818cf8" stop-opacity="0" />
+                        <stop offset="50%" stop-color="#818cf8" stop-opacity="1" />
+                        <stop offset="100%" stop-color="#818cf8" stop-opacity="0" />
+                    </linearGradient>
+                    <linearGradient id="grad-emerald" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#34d399" stop-opacity="0" />
+                        <stop offset="50%" stop-color="#34d399" stop-opacity="1" />
+                        <stop offset="100%" stop-color="#34d399" stop-opacity="0" />
+                    </linearGradient>
+                    <linearGradient id="grad-rose" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#fb7185" stop-opacity="0" />
+                        <stop offset="50%" stop-color="#fb7185" stop-opacity="1" />
+                        <stop offset="100%" stop-color="#fb7185" stop-opacity="0" />
+                    </linearGradient>
+                </defs>
+
+                <!-- Left to Center (React -> Core) -->
+                <path d="M 280 300 L 400 300" class="path-line" />
+                <path d="M 280 300 L 400 300" class="path-glow" stroke="url(#grad-blue)" />
+                <text x="340" y="290" class="label-text" text-anchor="middle">REST API</text>
+
+                <!-- Center to Top Right (Core -> Groq) -->
+                <path d="M 700 280 C 750 280, 770 150, 830 150" class="path-line" />
+                <path d="M 700 280 C 750 280, 770 150, 830 150" class="path-glow" stroke="url(#grad-rose)" />
+                <text x="765" y="205" class="label-text" text-anchor="middle">INFERENCE</text>
+
+                <!-- Center to Middle Right (Core -> Channel) -->
+                <path d="M 700 300 L 830 300" class="path-line" />
+                <path d="M 700 300 L 830 300" class="path-glow" stroke="url(#grad-indigo)" />
+                <text x="765" y="290" class="label-text" text-anchor="middle">DISPATCH</text>
+                
+                <!-- Channel to Core (Webhook) -->
+                <path d="M 830 330 C 780 330, 750 330, 700 330" class="path-line" />
+                <path d="M 830 330 C 780 330, 750 330, 700 330" class="path-glow reverse" stroke="url(#grad-indigo)" />
+                <text x="765" y="350" class="label-text" text-anchor="middle">WEBHOOK</text>
+
+                <!-- Center to Bottom Right (Core -> Mongo) -->
+                <path d="M 700 320 C 750 320, 770 450, 830 450" class="path-line" />
+                <path d="M 700 320 C 750 320, 770 450, 830 450" class="path-glow" stroke="url(#grad-emerald)" />
+                <text x="765" y="410" class="label-text" text-anchor="middle">STATE SYNC</text>
+            </svg>
+
+            <!-- Nodes -->
+            
+            <!-- Left: React Dashboard -->
+            <div class="glass-card w-[260px]" style="top: 300px; left: 20px; transform: translateY(-50%);">
+                <div class="flex items-center gap-4 mb-5">
+                    <div class="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                        <i data-lucide="layout-dashboard"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold text-white leading-tight">Client UI</h2>
+                        <p class="text-[11px] text-slate-400 mt-1 font-mono uppercase tracking-wider">React Dashboard</p>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-2.5">
+                    <div class="badge w-full"><i data-lucide="activity" class="w-3.5 h-3.5 text-sky-400"></i> Live Telemetry View</div>
+                    <div class="badge w-full"><i data-lucide="mic" class="w-3.5 h-3.5 text-sky-400"></i> Voice Directives</div>
+                </div>
+            </div>
+
+            <!-- Center: CRM Core Backend -->
+            <div class="glass-card core-card w-[300px]" style="top: 300px; left: 550px; transform: translate(-50%, -50%);">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.3)]">
+                        <i data-lucide="server" class="w-7 h-7"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white leading-tight">CRM Core API</h2>
+                        <p class="text-[11px] text-indigo-300/70 mt-1 font-mono uppercase tracking-wider">Node.js • Express</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 gap-2.5">
+                    <div class="badge w-full"><i data-lucide="workflow" class="w-3.5 h-3.5 text-indigo-400"></i> AI Orchestrator</div>
+                    <div class="badge w-full"><i data-lucide="webhook" class="w-3.5 h-3.5 text-indigo-400"></i> Webhook Ingestion</div>
+                </div>
+            </div>
+
+            <!-- Top Right: AI Engine -->
+            <div class="glass-card w-[250px]" style="top: 150px; left: 830px; transform: translateY(-50%);">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                        <i data-lucide="brain-circuit"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-semibold text-white leading-tight">Groq AI</h2>
+                        <p class="text-[11px] text-slate-400 mt-1 font-mono uppercase tracking-wider">Llama-3.3-70B</p>
+                    </div>
+                </div>
+                <div class="badge w-full"><i data-lucide="code" class="w-3.5 h-3.5 text-rose-400"></i> Native Aggregations</div>
+            </div>
+
+            <!-- Middle Right: Channel Service -->
+            <div class="glass-card w-[250px]" style="top: 300px; left: 830px; transform: translateY(-50%);">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                        <i data-lucide="send-to-back"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-semibold text-white leading-tight">Channel API</h2>
+                        <p class="text-[11px] text-slate-400 mt-1 font-mono uppercase tracking-wider">Microservice</p>
+                    </div>
+                </div>
+                <div class="badge w-full"><i data-lucide="timer" class="w-3.5 h-3.5 text-indigo-400"></i> Delivery Simulator</div>
+            </div>
+
+            <!-- Bottom Right: MongoDB -->
+            <div class="glass-card w-[250px]" style="top: 450px; left: 830px; transform: translateY(-50%);">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <i data-lucide="database"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-semibold text-white leading-tight">MongoDB</h2>
+                        <p class="text-[11px] text-slate-400 mt-1 font-mono uppercase tracking-wider">Data Layer</p>
+                    </div>
+                </div>
+                <div class="badge w-full"><i data-lucide="users" class="w-3.5 h-3.5 text-emerald-400"></i> 10k Users / 50k Orders</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

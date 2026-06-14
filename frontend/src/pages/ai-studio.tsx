@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Target, Users, Loader2, Sparkles, CheckCircle2, MessageSquare, ArrowRight, Brain, BarChart3 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Target, Users, Loader2, Sparkles, CheckCircle2, MessageSquare, ArrowRight, Brain, BarChart3, Mic, MicOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -14,13 +14,107 @@ const fadeUp = {
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100 } }
 };
 
+const SUGGESTIONS = [
+  "Bring back high-value customers who haven't ordered in 60 days",
+  "Reward VIP shoppers who spent over ₹10,000 this month",
+  "Engage users who abandoned their cart in the last 24 hours"
+];
+
+const PLACEHOLDERS = [
+  "Describe your marketing objective...",
+  "e.g., Target high-value shoppers who haven't bought in 30 days...",
+  "e.g., Reward VIPs who spent over ₹50,000 this year...",
+  "e.g., Engage users who abandoned cart recently..."
+];
+
 export default function AIStudio() {
-  const [goal, setGoal] = useState("Bring back inactive customers who haven't ordered in 60 days.");
+  const [goal, setGoal] = useState("");
   const [plan, setPlan] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const navigate = useNavigate();
+  const [isListening, setIsListening] = useState(false);
+  const [isSupported, setIsSupported] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        
+        recognition.onresult = (event: any) => {
+          let finalTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript;
+            }
+          }
+          if (finalTranscript) {
+            setGoal((prev) => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + finalTranscript);
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          console.error("Speech recognition error", event.error);
+          setIsListening(false);
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+        setIsSupported(true);
+      }
+    }
+  }, []);
+
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [currentPlaceholder, setCurrentPlaceholder] = useState("");
+  const [isTyping, setIsTyping] = useState(true);
+
+  useEffect(() => {
+    let timeout: any;
+    const text = PLACEHOLDERS[placeholderIndex];
+    
+    if (isTyping) {
+      if (currentPlaceholder.length < text.length) {
+        timeout = setTimeout(() => {
+          setCurrentPlaceholder(text.slice(0, currentPlaceholder.length + 1));
+        }, 40);
+      } else {
+        timeout = setTimeout(() => setIsTyping(false), 2500); // Pause at end
+      }
+    } else {
+      if (currentPlaceholder.length > 0) {
+        timeout = setTimeout(() => {
+          setCurrentPlaceholder(text.slice(0, currentPlaceholder.length - 1));
+        }, 20);
+      } else {
+        setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDERS.length);
+        setIsTyping(true);
+      }
+    }
+    return () => clearTimeout(timeout);
+  }, [currentPlaceholder, isTyping, placeholderIndex]);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current?.start();
+        setIsListening(true);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
 
   const handleAnalyze = async () => {
     setLoading(true);
@@ -133,19 +227,49 @@ export default function AIStudio() {
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
             rows={3}
-            className="w-full bg-transparent border-none p-0 text-lg text-white focus:ring-0 resize-none placeholder:text-white/20"
-            placeholder="Describe your objective..."
+            className="w-full bg-transparent border-none p-0 text-lg text-white focus:ring-0 resize-none placeholder:text-white/30"
+            placeholder={currentPlaceholder}
           />
+          
+          {!goal && (
+            <div className="flex flex-wrap gap-2 mt-2 mb-2">
+              {SUGGESTIONS.map((suggestion, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setGoal(suggestion)}
+                  className="text-xs text-emerald-400/70 border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/40 rounded-full px-3 py-1.5 transition-all"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="flex justify-between items-center mt-4">
             <span className="text-sm font-mono text-white/30">Press ⌘ Enter to execute</span>
-            <button
-              onClick={handleAnalyze}
-              disabled={loading || !goal}
-              className="flex items-center gap-2 bg-white text-black hover:bg-white/90 px-5 py-2.5 rounded-lg text-sm font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(255,255,255,0.25)] disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
-              {loading ? "Synthesizing..." : "Generate Strategy"}
-            </button>
+            <div className="flex items-center gap-3">
+              {isSupported && (
+                <button
+                  onClick={toggleListening}
+                  className={`p-2.5 rounded-lg border transition-all flex items-center justify-center ${
+                    isListening 
+                      ? 'bg-rose-500/20 border-rose-500/50 text-rose-400 animate-pulse shadow-[0_0_15px_rgba(244,63,94,0.3)]' 
+                      : 'bg-white/5 border-white/10 hover:bg-white/10 text-white/70 hover:text-white'
+                  }`}
+                  title="Speak your directive"
+                >
+                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </button>
+              )}
+              <button
+                onClick={handleAnalyze}
+                disabled={loading || !goal}
+                className="flex items-center gap-2 bg-white text-black hover:bg-white/90 px-5 py-2.5 rounded-lg text-sm font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(255,255,255,0.25)] disabled:opacity-50"
+              >
+                {loading ? <Loader2 className="animate-spin h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                {loading ? "Synthesizing..." : "Generate Strategy"}
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -263,9 +387,9 @@ export default function AIStudio() {
             {stepIndex >= 6 && (
               <motion.div variants={fadeUp} className="flex gap-6 group">
                 <div className="flex-shrink-0 w-14 flex justify-center relative">
-                  <div className="absolute inset-0 bg-white/20 blur-xl rounded-full scale-150 animate-pulse" />
-                  <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.4)] relative z-10">
-                    <BarChart3 className="w-4 h-4" />
+                  <div className="absolute inset-0 bg-emerald-500/10 blur-xl rounded-full scale-150" />
+                  <div className="w-8 h-8 rounded-full bg-[#050505] border border-emerald-500/20 flex items-center justify-center relative z-10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_0_15px_rgba(16,185,129,0.1)] transition-colors group-hover:border-emerald-500/40">
+                    <BarChart3 className="w-4 h-4 text-emerald-400" />
                   </div>
                 </div>
                 <div className="flex-1 pt-1.5">

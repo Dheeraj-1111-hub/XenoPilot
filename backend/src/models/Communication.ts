@@ -40,4 +40,6 @@ const CommunicationSchema = new Schema<ICommunication>({
   convertedAt: { type: Date }
 });
 
+CommunicationSchema.index({ campaignId: 1, customerId: 1 });
+
 export const Communication = mongoose.model<ICommunication>('Communication', CommunicationSchema);

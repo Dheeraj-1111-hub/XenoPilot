@@ -152,7 +152,10 @@ router.post('/launch', async (req, res) => {
         // Dynamically import axios so we don't need it at the top level if not present
         const axios = require('axios');
         const channelServiceUrl = process.env.CHANNEL_SERVICE_URL || 'http://localhost:5001/send';
-        for (const comm of insertedComms) {
+        
+        // We only dispatch the first 100 communications to prevent DDOSing the free tier Render containers
+        const commsToDispatch = insertedComms.slice(0, 100);
+        for (const comm of commsToDispatch) {
           try {
             await axios.post(channelServiceUrl, {
               communicationId: comm._id,
@@ -160,7 +163,9 @@ router.post('/launch', async (req, res) => {
               customerId: comm.customerId,
               channel,
               message: generatedMessage
-            });
+            }, { timeout: 15000 });
+            // Add a slight delay to prevent overwhelming the Render proxy
+            await new Promise(r => setTimeout(r, 250));
           } catch (e: any) {
             const errorMsg = e.code === 'ECONNREFUSED' 
               ? 'Connection Refused (Is the Channel Service running on port 5001?)' 

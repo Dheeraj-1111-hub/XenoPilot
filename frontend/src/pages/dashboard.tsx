@@ -254,9 +254,9 @@ export default function Dashboard() {
             <DecisionCard 
               title="Performance Forecast"
               subtitle={`${stats.latestCampaign.predictedOpenRate || 0}% Open Rate`}
-              metric="Gemini Intelligence"
+              metric="Groq Intelligence"
               icon={Brain}
-              tooltip="The mathematical open-rate projection calculated by Gemini AI prior to campaign launch."
+              tooltip="The mathematical open-rate projection calculated by Groq AI prior to campaign launch."
             />
             <DecisionCard 
               title="Campaign Status"

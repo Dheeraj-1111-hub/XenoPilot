@@ -2,40 +2,40 @@ import { Communication } from '../models/Communication';
 import { Campaign } from '../models/Campaign';
 
 export async function getCampaignFunnel(campaignId: string) {
-  const comms = await Communication.find({ campaignId }).lean();
-  
-  let audience = comms.length;
-  let sent = 0;
-  let delivered = 0;
-  let opened = 0;
-  let clicked = 0;
-  let converted = 0;
-  let revenue = 0;
-
-  for (const c of comms) {
-    if (c.status === 'Sent' || c.status === 'Delivered' || c.status === 'Opened' || c.status === 'Clicked' || c.status === 'Converted') sent++;
-    if (c.status === 'Delivered' || c.status === 'Opened' || c.status === 'Clicked' || c.status === 'Converted') delivered++;
-    if (c.status === 'Opened' || c.status === 'Clicked' || c.status === 'Converted') opened++;
-    if (c.status === 'Clicked' || c.status === 'Converted') clicked++;
-    if (c.status === 'Converted') {
-      converted++;
-      revenue += c.revenue || 0;
+  const mongoose = require('mongoose');
+  const [agg] = await Communication.aggregate([
+    { $match: { campaignId: new mongoose.Types.ObjectId(campaignId) } },
+    {
+      $group: {
+        _id: null,
+        audience: { $sum: 1 },
+        sent: { $sum: { $cond: [{ $in: ['$status', ['Sent', 'Delivered', 'Opened', 'Clicked', 'Converted']] }, 1, 0] } },
+        delivered: { $sum: { $cond: [{ $in: ['$status', ['Delivered', 'Opened', 'Clicked', 'Converted']] }, 1, 0] } },
+        opened: { $sum: { $cond: [{ $in: ['$status', ['Opened', 'Clicked', 'Converted']] }, 1, 0] } },
+        clicked: { $sum: { $cond: [{ $in: ['$status', ['Clicked', 'Converted']] }, 1, 0] } },
+        converted: { $sum: { $cond: [{ $eq: ['$status', 'Converted'] }, 1, 0] } },
+        revenue: { $sum: { $cond: [{ $eq: ['$status', 'Converted'] }, { $ifNull: ['$revenue', 0] }, 0] } }
+      }
     }
-  }
+  ]);
 
-  const deliveryRate = sent ? Math.round((delivered / sent) * 100) : 0;
-  const openRate = delivered ? Math.round((opened / delivered) * 100) : 0;
-  const ctr = opened ? Math.round((clicked / opened) * 100) : 0;
-  const conversionRate = clicked ? Math.round((converted / clicked) * 100) : 0;
+  const funnel = agg || {
+    audience: 0, sent: 0, delivered: 0, opened: 0, clicked: 0, converted: 0, revenue: 0
+  };
+
+  const deliveryRate = funnel.sent ? Math.round((funnel.delivered / funnel.sent) * 100) : 0;
+  const openRate = funnel.delivered ? Math.round((funnel.opened / funnel.delivered) * 100) : 0;
+  const ctr = funnel.opened ? Math.round((funnel.clicked / funnel.opened) * 100) : 0;
+  const conversionRate = funnel.clicked ? Math.round((funnel.converted / funnel.clicked) * 100) : 0;
 
   return {
-    audience,
-    sent,
-    delivered,
-    opened,
-    clicked,
-    converted,
-    revenue,
+    audience: funnel.audience,
+    sent: funnel.sent,
+    delivered: funnel.delivered,
+    opened: funnel.opened,
+    clicked: funnel.clicked,
+    converted: funnel.converted,
+    revenue: funnel.revenue,
     deliveryRate,
     openRate,
     ctr,

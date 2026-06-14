@@ -21,7 +21,7 @@ export default function Analytics() {
       const res = await api.get('/analytics/overview');
       return res.data;
     },
-    refetchInterval: 5000 // Poll every 5 seconds for real-time updates
+    refetchInterval: 60000 // Poll every 60 seconds for real-time updates
   });
 
   const revenueData = stats?.revenueData || [];

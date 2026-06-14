@@ -70,7 +70,7 @@ export default function Dashboard() {
       
       return data;
     },
-    refetchInterval: 5000
+    refetchInterval: 60000
   });
 
   const [executing, setExecuting] = useState(false);

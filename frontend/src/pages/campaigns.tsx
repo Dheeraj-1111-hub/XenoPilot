@@ -27,7 +27,7 @@ export default function Campaigns() {
       return res.data;
     },
     enabled: !!selectedCampaign,
-    refetchInterval: 5000 // Poll every 5 seconds for live events
+    refetchInterval: 60000 // Poll every 60 seconds for live events
   });
 
   const { data: campaigns = [], isLoading } = useQuery({
@@ -36,7 +36,7 @@ export default function Campaigns() {
       const res = await api.get('/campaigns');
       return res.data;
     },
-    refetchInterval: 3000
+    refetchInterval: 60000
   });
 
   const getStatusStyle = (status: string) => {

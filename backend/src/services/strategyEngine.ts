@@ -47,29 +47,29 @@ Return ONLY a valid JSON object matching this exact schema. NO markdown, NO text
     // Now, calculate the audience count using generateMongoQueryFromNL
     const criteriaJson = await generateMongoQueryFromNL(directive + " target: " + strategy.segment);
     
-    // Fallback to empty filter if generated query is invalid
-    let count = 0;
-    try {
-       count = await Customer.countDocuments(criteriaJson);
-    } catch(e) {
-       console.error("Invalid criteriaJson generated", criteriaJson);
-    }
-
-    // Scale conversions based on actual audience size rather than the raw Gemini prediction
-    // If Groq predicted 10 conversions for an unknown audience, let's scale it based on CTR and a realistic conversion rate
-    const predictedConversions = Math.round(count * (strategy.forecast.openRate / 100) * (strategy.forecast.ctr / 100) * 0.15);
-
-    // Mongoose does not automatically cast strings to Dates inside .aggregate() pipelines!
+    // Mongoose does not automatically cast strings to Dates inside complex queries if not strictly typed!
     // We must convert the AI's generated ISO strings into native Javascript Date objects.
     const dateReviver = (key: string, value: any) => {
       const isIsoDate = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d*)?(?:[-+]\d{2}:?\d{2}|Z)$/.test(value);
       if (typeof value === 'string' && isIsoDate) return new Date(value);
       return value;
     };
-    const aggCriteriaJson = JSON.parse(JSON.stringify(criteriaJson), dateReviver);
+    const parsedCriteria = JSON.parse(JSON.stringify(criteriaJson), dateReviver);
+
+    // Fallback to empty filter if generated query is invalid
+    let count = 0;
+    try {
+       count = await Customer.countDocuments(parsedCriteria);
+    } catch(e) {
+       console.error("Invalid criteriaJson generated", parsedCriteria);
+    }
+
+    // Scale conversions based on actual audience size rather than the raw Gemini prediction
+    // If Groq predicted 10 conversions for an unknown audience, let's scale it based on CTR and a realistic conversion rate
+    const predictedConversions = Math.round(count * (strategy.forecast.openRate / 100) * (strategy.forecast.ctr / 100) * 0.15);
 
     const agg = await Customer.aggregate([
-      { $match: aggCriteriaJson },
+      { $match: parsedCriteria },
       { $group: { _id: null, avgSpend: { $avg: "$totalSpent" } } }
     ]);
     const audienceAvgSpend = agg.length > 0 ? Math.round(agg[0].avgSpend) : 0;

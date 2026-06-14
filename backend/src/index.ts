@@ -13,13 +13,14 @@ app.use(express.json());
 app.use('/api', routes);
 
 async function start() {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server listening on port ${PORT}`);
+  });
+
   try {
     const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/xenopilot';
     await mongoose.connect(uri);
     console.log(`✅ Connected to MongoDB at ${uri === process.env.MONGO_URI ? 'Atlas' : 'Local'}`);
-    app.listen(PORT, () => {
-      console.log(`🚀 Server listening on port ${PORT}`);
-    });
   } catch (err) {
     console.error('❌ Database connection failed', err);
   }

@@ -2,7 +2,7 @@ import { Communication } from '../models/Communication';
 import { Campaign } from '../models/Campaign';
 
 export async function getCampaignFunnel(campaignId: string) {
-  const comms = await Communication.find({ campaignId });
+  const comms = await Communication.find({ campaignId }).lean();
   
   let audience = comms.length;
   let sent = 0;
@@ -46,7 +46,7 @@ export async function getCampaignFunnel(campaignId: string) {
 export async function getEventStream(campaignId: string) {
   const comms = await Communication.find({ campaignId, events: { $exists: true, $not: { $size: 0 } } })
     .populate('customerId', 'name email')
-    .limit(100);
+    .limit(100).lean();
 
   const stream = [];
   for (const c of comms) {
@@ -67,7 +67,7 @@ export async function getEventStream(campaignId: string) {
 
 export async function getAnalyticsOverview() {
   const campaigns = await Campaign.countDocuments();
-  const comms = await Communication.find();
+  const comms = await Communication.find().lean();
   
   const funnel = {
     audience: comms.length,
